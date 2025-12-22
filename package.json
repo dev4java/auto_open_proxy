@@ -1,0 +1,98 @@
+{
+  "name": "auto-proxy-switcher",
+  "displayName": "Auto Proxy Switcher",
+  "description": "自动检测 AI 服务连接状态并智能配置代理",
+  "version": "1.0.0",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "auto-proxy.checkConnection",
+        "title": "Auto Proxy: 检查 AI 服务连接状态"
+      },
+      {
+        "command": "auto-proxy.enableProxy",
+        "title": "Auto Proxy: 启用代理"
+      },
+      {
+        "command": "auto-proxy.disableProxy",
+        "title": "Auto Proxy: 禁用代理"
+      },
+      {
+        "command": "auto-proxy.toggleAutoCheck",
+        "title": "Auto Proxy: 切换自动检测（启动/暂停）"
+      },
+      {
+        "command": "auto-proxy.startAutoCheck",
+        "title": "Auto Proxy: 启动自动检测"
+      },
+      {
+        "command": "auto-proxy.stopAutoCheck",
+        "title": "Auto Proxy: 停止自动检测"
+      }
+    ],
+    "configuration": {
+      "title": "Auto Proxy Switcher",
+      "properties": {
+        "autoProxy.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用自动代理切换"
+        },
+        "autoProxy.checkInterval": {
+          "type": "number",
+          "default": 60,
+          "description": "检测间隔（秒）"
+        },
+        "autoProxy.proxyUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:7890",
+          "description": "代理服务器地址"
+        },
+        "autoProxy.testUrls": {
+          "type": "array",
+          "default": [
+            "https://api.anthropic.com",
+            "https://api.openai.com",
+            "https://www.googleapis.com"
+          ],
+          "description": "用于测试连接的 AI 服务 URL 列表"
+        },
+        "autoProxy.timeout": {
+          "type": "number",
+          "default": 5000,
+          "description": "连接超时时间（毫秒）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "build": "webpack --mode production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/node-fetch": "^2.6.13",
+    "@types/vscode": "^1.80.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
