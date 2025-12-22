@@ -4,7 +4,11 @@
   "description": "自动检测 AI 服务连接状态并智能配置代理 | Automatically detect AI service connectivity and configure proxy",
   "version": "1.0.0",
   "publisher": "dev4java",
+  "author": {
+    "name": "dev4java"
+  },
   "license": "MIT",
+  "preview": false,
   "repository": {
     "type": "git",
     "url": "https://github.com/dev4java/auto_open_proxy"
