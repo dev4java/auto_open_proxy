@@ -1,0 +1,28 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="60" fill="#007ACC" stroke="#FFFFFF" stroke-width="2"/>
+  
+  <!-- Globe Lines (Longitude) -->
+  <ellipse cx="64" cy="64" rx="50" ry="50" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <ellipse cx="64" cy="64" rx="35" ry="50" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+  <ellipse cx="64" cy="64" rx="20" ry="50" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+  
+  <!-- Globe Lines (Latitude) -->
+  <line x1="14" y1="64" x2="114" y2="64" stroke="#FFFFFF" stroke-width="2"/>
+  <ellipse cx="64" cy="64" rx="50" ry="15" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+  <ellipse cx="64" cy="64" rx="50" ry="30" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+  
+  <!-- Proxy Arrow/Connection Symbol -->
+  <g transform="translate(80, 20)">
+    <!-- Double arrows indicating proxy connection -->
+    <path d="M 0 0 L 20 10 L 0 20" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 5 0 L 25 10 L 5 20" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Connection dots -->
+  <circle cx="30" cy="45" r="3" fill="#FFD700"/>
+  <circle cx="98" cy="45" r="3" fill="#FFD700"/>
+  <circle cx="64" cy="30" r="3" fill="#FFD700"/>
+  <circle cx="64" cy="98" r="3" fill="#FFD700"/>
+</svg>
+
