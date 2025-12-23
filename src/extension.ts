@@ -75,11 +75,20 @@ async function setProxy(proxyUrl: string): Promise<void> {
  * 移除代理
  */
 async function removeProxy(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('http');
-    await config.update('proxy', undefined, vscode.ConfigurationTarget.Global);
+    // 保存当前代理配置（用户可能修改过）
+    const currentProxy = getCurrentProxy();
+    if (currentProxy && currentProxy.trim() !== '') {
+        const autoProxyConfig = vscode.workspace.getConfiguration('autoProxy');
+        await autoProxyConfig.update('lastUsedProxyUrl', currentProxy, vscode.ConfigurationTarget.Global);
+        console.log(`[Auto Proxy] 已保存代理地址: ${currentProxy}`);
+    }
+    
+    // 清空代理配置
+    const httpConfig = vscode.workspace.getConfiguration('http');
+    await httpConfig.update('proxy', undefined, vscode.ConfigurationTarget.Global);
     isProxyEnabled = false;
     updateStatusBar();
-    console.log(`[Auto Proxy] ${t('logConfigCleared')}`);
+    console.log(`[Auto Proxy] 代理配置已清空`);
 }
 
 /**
@@ -101,11 +110,20 @@ function updateStatusBar(): void {
 }
 
 /**
+ * 获取要使用的代理地址（优先使用上次保存的）
+ */
+function getProxyUrlToUse(): string {
+    const config = vscode.workspace.getConfiguration('autoProxy');
+    const lastUsedProxy: string = config.get('lastUsedProxyUrl', '');
+    const defaultProxy: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+    return lastUsedProxy && lastUsedProxy.trim() !== '' ? lastUsedProxy : defaultProxy;
+}
+
+/**
  * 执行连接检查（询问模式 - 启动时使用）
  */
 async function performCheckAndAsk(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('autoProxy');
-    const proxyUrl: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+    const proxyUrl = getProxyUrlToUse();
     const currentProxy = getCurrentProxy();
 
     console.log(`[Auto Proxy] ${t('networkCheckStart')}`);
@@ -197,7 +215,7 @@ async function performAutoCheck(): Promise<void> {
         return;
     }
 
-    const proxyUrl: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+    const proxyUrl = getProxyUrlToUse();
     const currentProxy = getCurrentProxy();
 
     console.log(`[Auto Proxy] 定时检测 AI 服务连接状态...`);
@@ -392,7 +410,13 @@ export function activate(context: vscode.ExtensionContext) {
         'auto-proxy.enableProxy',
         async () => {
             const config = vscode.workspace.getConfiguration('autoProxy');
-            const proxyUrl: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+            // 优先使用上次保存的代理地址，如果没有才使用默认值
+            const lastUsedProxy: string = config.get('lastUsedProxyUrl', '');
+            const defaultProxy: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+            const proxyUrl = lastUsedProxy && lastUsedProxy.trim() !== '' ? lastUsedProxy : defaultProxy;
+            
+            console.log(`[Auto Proxy] 启用代理: ${proxyUrl} (上次使用: ${lastUsedProxy || '无'})`);
+            
             await setProxy(proxyUrl);
             vscode.window.showInformationMessage(
                 `✅ 已启用代理: ${proxyUrl}\n请确保代理服务正在运行`,
@@ -417,8 +441,7 @@ export function activate(context: vscode.ExtensionContext) {
                 t('msgAction_Ok')
             ).then((action) => {
                 if (action === t('msgAction_EnableProxy')) {
-                    const config = vscode.workspace.getConfiguration('autoProxy');
-                    const proxyUrl: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
+                    const proxyUrl = getProxyUrlToUse();
                     setProxy(proxyUrl);
                 }
             });

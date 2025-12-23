@@ -102,6 +102,11 @@
           "type": "number",
           "default": 5000,
           "description": "连接超时时间（毫秒）"
+        },
+        "autoProxy.lastUsedProxyUrl": {
+          "type": "string",
+          "default": "",
+          "description": "上次使用的代理地址（自动保存）"
         }
       }
     }
