@@ -2,7 +2,7 @@
   "name": "auto-proxy-switcher",
   "displayName": "Auto Proxy Switcher",
   "description": "自动检测 AI 服务连接状态并智能配置代理 | Automatically detect AI service connectivity and configure proxy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "yusw",
   "author": {
     "name": "yusw"
