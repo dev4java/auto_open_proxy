@@ -67,8 +67,14 @@ function getCurrentProxy(): string | undefined {
 async function setProxy(proxyUrl: string): Promise<void> {
     const config = vscode.workspace.getConfiguration('http');
     await config.update('proxy', proxyUrl, vscode.ConfigurationTarget.Global);
+    
+    // 保存当前设置的代理地址
+    const autoProxyConfig = vscode.workspace.getConfiguration('autoProxy');
+    await autoProxyConfig.update('lastUsedProxyUrl', proxyUrl, vscode.ConfigurationTarget.Global);
+    
     isProxyEnabled = true;
     updateStatusBar();
+    console.log(`[Auto Proxy] 代理已设置并保存: ${proxyUrl}`);
 }
 
 /**
@@ -178,9 +184,10 @@ async function performCheckAndAsk(): Promise<void> {
                     `${t('msgProxyEnabled')}\n${t('msgProxyEnsureRunning')}`,
                     t('msgAction_DisableProxy'),
                     t('msgAction_Ok')
-                ).then((btn) => {
+                ).then(async (btn) => {
                     if (btn === t('msgAction_DisableProxy')) {
-                        removeProxy();
+                        await removeProxy();
+                        vscode.window.showInformationMessage(t('msgProxyDisabled'));
                     }
                 });
             } else if (action === t('msgAction_NoMoreTips')) {
@@ -195,9 +202,10 @@ async function performCheckAndAsk(): Promise<void> {
                 `ℹ️ ${t('networkNotAccessible')}\n${t('msgAction_KeepProxy')}: ${currentProxy}`,
                 t('msgAction_DisableProxy'),
                 t('msgAction_Ok')
-            ).then((action) => {
+            ).then(async (action) => {
                 if (action === t('msgAction_DisableProxy')) {
-                    removeProxy();
+                    await removeProxy();
+                    vscode.window.showInformationMessage(t('msgProxyDisabled'));
                 }
             });
         }
@@ -254,9 +262,10 @@ async function performAutoCheck(): Promise<void> {
                 vscode.window.showInformationMessage(
                     '✅ 已启用代理，请确保代理服务正在运行',
                     '禁用代理'
-                ).then((btn) => {
+                ).then(async (btn) => {
                     if (btn === '禁用代理') {
-                        removeProxy();
+                        await removeProxy();
+                        vscode.window.showInformationMessage('✅ 已禁用代理');
                     }
                 });
             } else if (action === '停止检测') {
@@ -422,9 +431,10 @@ export function activate(context: vscode.ExtensionContext) {
                 `✅ 已启用代理: ${proxyUrl}\n请确保代理服务正在运行`,
                 '禁用代理',
                 '确定'
-            ).then((action) => {
+            ).then(async (action) => {
                 if (action === '禁用代理') {
-                    removeProxy();
+                    await removeProxy();
+                    vscode.window.showInformationMessage('✅ 已禁用代理');
                 }
             });
         }
