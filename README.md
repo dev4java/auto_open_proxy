@@ -183,10 +183,14 @@ MIT License
 
 ## Changelog | 更新日志
 
+### 1.0.2
+- ✅ Update README with bilingual content (English first, Chinese parallel)
+- ✅ Fix async handling in removeProxy() callbacks to ensure configuration is cleared
+- ✅ Enhance user feedback after disabling proxy
+- ✅ Improve proxy address description to mention user configuration
+
 ### 1.0.1
 - ✅ Remember last used proxy address
-- ✅ Fix proxy disable not clearing configuration
-- ✅ Improve async handling in popup callbacks
 - ✅ Add network change detection
 - ✅ Add i18n support (English/Chinese)
 
