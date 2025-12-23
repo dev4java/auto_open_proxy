@@ -41,8 +41,12 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 
 ### Method 2: From VSIX file | 方式 2：从 VSIX 文件安装
 
+Download the `.vsix` file from [GitHub Releases](https://github.com/dev4java/auto_open_proxy/releases), then:
+
+从 [GitHub Releases](https://github.com/dev4java/auto_open_proxy/releases) 下载 `.vsix` 文件，然后：
+
 ```bash
-code --install-extension auto-proxy-switcher-1.0.2.vsix
+code --install-extension auto-proxy-switcher-1.0.3.vsix
 ```
 
 **Restart VS Code/Cursor after installation. | 安装后重启 VS Code/Cursor。**
@@ -215,7 +219,14 @@ MIT License
 
 ## 📝 Changelog | 更新日志
 
-### 1.0.2 (Latest)
+### 1.0.3 (Latest)
+- ✅ Add custom globe/proxy icon for better visual identity
+- ✅ Update all references from "Cursor" to "VS Code/Cursor" for broader compatibility
+- ✅ Remove install.sh script (users can install from Marketplace directly)
+- ✅ Fix README to remove personal path exposure
+- ✅ Improve installation documentation
+
+### 1.0.2
 - ✅ Update README with bilingual content (English first, Chinese parallel)
 - ✅ Fix async handling in removeProxy() callbacks to ensure configuration is cleared
 - ✅ Enhance user feedback after disabling proxy
