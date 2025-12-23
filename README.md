@@ -1,18 +1,18 @@
 # Auto Proxy Switcher
 
-Automatically detect AI service connectivity and intelligently configure HTTP proxy for Cursor.
+Automatically detect AI service connectivity and intelligently configure HTTP proxy for VS Code/Cursor.
 
-自动检测 AI 服务连接状态并智能配置代理的 Cursor 扩展。
+自动检测 AI 服务连接状态并智能配置代理的 VS Code/Cursor 扩展。
 
 ---
 
 ## 📖 Use Case | 使用场景
 
 ### English
-When you need to access AI services (like Claude, OpenAI) through a network proxy, but your VPN doesn't support TUN mode (or it's inconvenient to enable global mode), you have to manually configure HTTP proxy in Cursor settings. This extension provides **automatic switching** functionality that configures or removes proxy based on your network environment.
+When you need to access AI services (like Claude, OpenAI) through a network proxy, but your VPN doesn't support TUN mode (or it's inconvenient to enable global mode), you have to manually configure HTTP proxy in VS Code/Cursor settings. This extension provides **automatic switching** functionality that configures or removes proxy based on your network environment.
 
 ### 中文
-当你需要通过网络代理访问 AI 服务（如 Claude、OpenAI），但 VPN 不支持 TUN 模式（或不方便开启全局模式）时，需要在 Cursor 中手动配置 HTTP 代理。本扩展提供**自动切换**功能，根据网络环境自动配置或移除代理。
+当你需要通过网络代理访问 AI 服务（如 Claude、OpenAI），但 VPN 不支持 TUN 模式（或不方便开启全局模式）时，需要在 VS Code/Cursor 中手动配置 HTTP 代理。本扩展提供**自动切换**功能，根据网络环境自动配置或移除代理。
 
 ---
 
@@ -20,7 +20,7 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 
 | English | 中文 |
 |---------|------|
-| ✅ **Auto-detect on startup**: Detect network environment when Cursor starts | ✅ **启动时自动检测**：打开 Cursor 时自动检测网络环境 |
+| ✅ **Auto-detect on startup**: Detect network environment when VS Code/Cursor starts | ✅ **启动时自动检测**：打开 VS Code/Cursor 时自动检测网络环境 |
 | ✅ **Smart prompt mode**: Ask whether to enable proxy when AI services are unreachable | ✅ **智能询问模式**：无法访问 AI 服务时询问是否启用代理 |
 | ✅ **One-click toggle**: Click status bar to enable/disable proxy | ✅ **一键切换**：状态栏点击即可启用/禁用代理 |
 | ✅ **Periodic check**: Background periodic network check (configurable) | ✅ **定时检测**：后台定时检测网络变化（可配置） |
@@ -34,7 +34,7 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 
 ### Method 1: From VS Code Marketplace | 方式 1：从市场安装
 
-1. Open Cursor / 打开 Cursor
+1. Open VS Code/Cursor / 打开 VS Code/Cursor
 2. Go to Extensions (`Cmd+Shift+X` or `Ctrl+Shift+X`) / 进入扩展页面
 3. Search for "Auto Proxy Switcher" / 搜索 "Auto Proxy Switcher"
 4. Click Install / 点击安装
@@ -45,7 +45,7 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 code --install-extension auto-proxy-switcher-1.0.2.vsix
 ```
 
-**Restart Cursor after installation. | 安装后重启 Cursor。**
+**Restart VS Code/Cursor after installation. | 安装后重启 VS Code/Cursor。**
 
 ---
 
@@ -82,9 +82,9 @@ Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux), type `Auto Proxy`
 
 ## ⚙️ Configuration | 配置选项
 
-Open Cursor settings (`Cmd+,` or `Ctrl+,`), search for `autoProxy`:
+Open VS Code/Cursor settings (`Cmd+,` or `Ctrl+,`), search for `autoProxy`:
 
-打开 Cursor 设置（`Cmd+,` 或 `Ctrl+,`），搜索 `autoProxy`：
+打开 VS Code/Cursor 设置（`Cmd+,` 或 `Ctrl+,`），搜索 `autoProxy`：
 
 | Setting | Default | Description | 说明 |
 |---------|---------|-------------|------|
@@ -114,9 +114,9 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 | V2Ray | 10808 | V2Ray | 10808 |
 | Shadowsocks | 1080 | Shadowsocks | 1080 |
 
-> **Note:** The extension remembers your last manually configured proxy address, so if you change it in Cursor settings, it will be used next time.
+> **Note:** The extension remembers your last manually configured proxy address, so if you change it in VS Code/Cursor settings, it will be used next time.
 >
-> **注意:** 扩展会记住你上次手动配置的代理地址，因此如果你在 Cursor 设置中修改了代理，下次会使用你修改的地址。
+> **注意:** 扩展会记住你上次手动配置的代理地址，因此如果你在 VS Code/Cursor 设置中修改了代理，下次会使用你修改的地址。
 
 ---
 
@@ -143,13 +143,13 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 ### Extension not loaded | 扩展未加载
 
 **English:**
-- Check extension directory: `~/.cursor/extensions/`
-- Restart Cursor
+- Check extension directory: `~/.vscode/extensions/` or `~/.cursor/extensions/`
+- Restart VS Code/Cursor
 - Open Developer Tools (`Help` → `Toggle Developer Tools`) and check Console
 
 **中文:**
-- 检查扩展目录：`~/.cursor/extensions/`
-- 重启 Cursor
+- 检查扩展目录：`~/.vscode/extensions/` 或 `~/.cursor/extensions/`
+- 重启 VS Code/Cursor
 - 打开开发者工具（`Help` → `Toggle Developer Tools`）查看控制台
 
 ### Proxy configuration not working | 代理配置无效
@@ -157,12 +157,12 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 **English:**
 - Ensure proxy service is running (Clash/V2Ray/Shadowsocks)
 - Test proxy: `curl -x http://127.0.0.1:7890 https://www.google.com`
-- Restart Cursor
+- Restart VS Code/Cursor
 
 **中文:**
 - 确认代理服务正在运行（Clash/V2Ray/Shadowsocks）
 - 测试代理：`curl -x http://127.0.0.1:7890 https://www.google.com`
-- 重启 Cursor
+- 重启 VS Code/Cursor
 
 ### Frequent pop-ups | 频繁弹窗
 
@@ -179,12 +179,12 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 ## 💻 Development | 开发调试
 
 ### English:
-1. Open this project in Cursor
+1. Open this project in VS Code/Cursor
 2. Press `F5` to start debugging
 3. Test extension in the new Extension Development Host window
 
 ### 中文:
-1. 在 Cursor 中打开本项目
+1. 在 VS Code/Cursor 中打开本项目
 2. 按 `F5` 启动调试
 3. 在新窗口中测试扩展功能
 
