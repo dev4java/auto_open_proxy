@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as os from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
 import fetch from 'node-fetch';
 import { initI18n, t } from './i18n';
 
@@ -62,6 +64,112 @@ function getCurrentProxy(): string | undefined {
 }
 
 /**
+ * 在 ~/.zshrc 中启用代理配置
+ */
+async function enableZshProxy(proxyUrl: string): Promise<void> {
+    try {
+        const zshrcPath = path.join(os.homedir(), '.zshrc');
+        
+        // 解析代理 URL
+        const httpProxy = proxyUrl;
+        const httpsProxy = proxyUrl;
+        const allProxy = proxyUrl.replace('http://', 'socks5://').replace(':7890', ':7891');
+        
+        const proxyLines = [
+            '',
+            '# ======== Auto Proxy Switcher 代理配置 ========',
+            '# 由 VS Code Auto Proxy Switcher 扩展自动管理',
+            `export http_proxy=${httpProxy}`,
+            `export https_proxy=${httpsProxy}`,
+            `export all_proxy=${allProxy}`,
+            '# ============================================',
+            '',
+        ];
+        
+        // 读取现有内容
+        let content = '';
+        if (fs.existsSync(zshrcPath)) {
+            content = fs.readFileSync(zshrcPath, 'utf-8');
+        }
+        
+        // 检查是否已存在配置
+        if (content.includes('# ======== Auto Proxy Switcher 代理配置 ========')) {
+            // 如果存在，先移除旧配置
+            const lines = content.split('\n');
+            const startIndex = lines.findIndex(line => line.includes('# ======== Auto Proxy Switcher 代理配置 ========'));
+            if (startIndex !== -1) {
+                let endIndex = startIndex;
+                for (let i = startIndex + 1; i < lines.length; i++) {
+                    if (lines[i].includes('# ============================================')) {
+                        endIndex = i;
+                        break;
+                    }
+                }
+                lines.splice(startIndex, endIndex - startIndex + 2); // +2 to include end marker and empty line
+                content = lines.join('\n');
+            }
+        }
+        
+        // 添加新配置
+        content = content.trimEnd() + '\n' + proxyLines.join('\n');
+        
+        // 写入文件
+        fs.writeFileSync(zshrcPath, content, 'utf-8');
+        console.log(`[Auto Proxy] 已在 ~/.zshrc 中启用代理配置`);
+    } catch (error) {
+        console.error(`[Auto Proxy] 更新 ~/.zshrc 失败:`, error);
+        vscode.window.showWarningMessage(t('zshrcUpdateFailed'));
+    }
+}
+
+/**
+ * 在 ~/.zshrc 中禁用代理配置
+ */
+async function disableZshProxy(): Promise<void> {
+    try {
+        const zshrcPath = path.join(os.homedir(), '.zshrc');
+        
+        if (!fs.existsSync(zshrcPath)) {
+            return;
+        }
+        
+        // 读取现有内容
+        let content = fs.readFileSync(zshrcPath, 'utf-8');
+        
+        // 查找并移除配置块
+        if (content.includes('# ======== Auto Proxy Switcher 代理配置 ========')) {
+            const lines = content.split('\n');
+            const startIndex = lines.findIndex(line => line.includes('# ======== Auto Proxy Switcher 代理配置 ========'));
+            if (startIndex !== -1) {
+                let endIndex = startIndex;
+                for (let i = startIndex + 1; i < lines.length; i++) {
+                    if (lines[i].includes('# ============================================')) {
+                        endIndex = i;
+                        break;
+                    }
+                }
+                
+                // 移除配置块（包括前后的空行）
+                if (startIndex > 0 && lines[startIndex - 1].trim() === '') {
+                    lines.splice(startIndex - 1, endIndex - startIndex + 3);
+                } else {
+                    lines.splice(startIndex, endIndex - startIndex + 2);
+                }
+                
+                content = lines.join('\n');
+                
+                // 写入文件
+                fs.writeFileSync(zshrcPath, content, 'utf-8');
+                console.log(`[Auto Proxy] 已在 ~/.zshrc 中禁用代理配置`);
+            }
+        }
+    } catch (error) {
+        console.error(`[Auto Proxy] 更新 ~/.zshrc 失败:`, error);
+        vscode.window.showWarningMessage(t('zshrcUpdateFailed'));
+    }
+}
+
+/**
  * 设置代理
  */
 async function setProxy(proxyUrl: string): Promise<void> {
@@ -71,6 +179,9 @@ async function setProxy(proxyUrl: string): Promise<void> {
     // 保存当前设置的代理地址
     const autoProxyConfig = vscode.workspace.getConfiguration('autoProxy');
     await autoProxyConfig.update('lastUsedProxyUrl', proxyUrl, vscode.ConfigurationTarget.Global);
+    
+    // 同时在 ~/.zshrc 中启用代理配置
+    await enableZshProxy(proxyUrl);
     
     isProxyEnabled = true;
     updateStatusBar();
@@ -92,6 +203,10 @@ async function removeProxy(): Promise<void> {
     // 清空代理配置
     const httpConfig = vscode.workspace.getConfiguration('http');
     await httpConfig.update('proxy', undefined, vscode.ConfigurationTarget.Global);
+    
+    // 同时在 ~/.zshrc 中禁用代理配置
+    await disableZshProxy();
+    
     isProxyEnabled = false;
     updateStatusBar();
     console.log(`[Auto Proxy] 代理配置已清空`);

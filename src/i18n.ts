@@ -51,6 +51,9 @@ interface Messages {
     logCheckStarted: string;
     logInterval: string;
     logConfigCleared: string;
+    
+    // 错误消息
+    zshrcUpdateFailed: string;
 }
 
 const zh_CN: Messages = {
@@ -102,6 +105,9 @@ const zh_CN: Messages = {
     logCheckStarted: '定时检测 AI 服务连接状态...',
     logInterval: '已启动自动检查，间隔',
     logConfigCleared: '已清空代理配置',
+    
+    // 错误消息
+    zshrcUpdateFailed: '⚠️ 更新 ~/.zshrc 文件失败，请检查文件权限',
 };
 
 const en_US: Messages = {
@@ -153,6 +159,9 @@ const en_US: Messages = {
     logCheckStarted: 'Scheduled AI service check...',
     logInterval: 'Auto check started, interval',
     logConfigCleared: 'Proxy config cleared',
+    
+    // Error messages
+    zshrcUpdateFailed: '⚠️ Failed to update ~/.zshrc file, please check file permissions',
 };
 
 let currentLanguage: string = 'en';

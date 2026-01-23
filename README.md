@@ -26,6 +26,7 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 | ✅ **Periodic check**: Background periodic network check (configurable) | ✅ **定时检测**：后台定时检测网络变化（可配置） |
 | ✅ **Network change detection**: Automatically re-check when network changes | ✅ **网络变化检测**：检测到网络切换时自动重新检测 |
 | ✅ **Proxy memory**: Remember your last used proxy configuration | ✅ **代理记忆**：记住你上次使用的代理配置 |
+| ✅ **Shell environment sync**: Auto-sync proxy config to `~/.zshrc` for terminal use | ✅ **终端环境同步**：自动同步代理配置到 `~/.zshrc`，终端也能使用代理 |
 | ✅ **i18n support**: Auto-detect system language (English/Chinese) | ✅ **国际化支持**：自动识别系统语言（中文/英文） |
 
 ---
@@ -46,7 +47,7 @@ Download the `.vsix` file from [GitHub Releases](https://github.com/dev4java/aut
 从 [GitHub Releases](https://github.com/dev4java/auto_open_proxy/releases) 下载 `.vsix` 文件，然后：
 
 ```bash
-code --install-extension auto-proxy-switcher-1.0.3.vsix
+code --install-extension auto-proxy-switcher-1.0.4.vsix
 ```
 
 **Restart VS Code/Cursor after installation. | 安装后重启 VS Code/Cursor。**
@@ -121,6 +122,54 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 > **Note:** The extension remembers your last manually configured proxy address, so if you change it in VS Code/Cursor settings, it will be used next time.
 >
 > **注意:** 扩展会记住你上次手动配置的代理地址，因此如果你在 VS Code/Cursor 设置中修改了代理，下次会使用你修改的地址。
+
+---
+
+## 🖥️ Shell Environment Sync | 终端环境同步
+
+### English
+
+When you **enable proxy**, the extension automatically adds proxy environment variables to your `~/.zshrc`:
+
+```bash
+# ======== Auto Proxy Switcher 代理配置 ========
+# 由 VS Code Auto Proxy Switcher 扩展自动管理
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
+export all_proxy=socks5://127.0.0.1:7891
+# ============================================
+```
+
+When you **disable proxy**, the extension automatically removes these lines from `~/.zshrc`.
+
+**Benefits:**
+- ✅ Terminal commands (`curl`, `git`, `npm`, etc.) automatically use the same proxy
+- ✅ No need to manually manage shell proxy configuration
+- ✅ Proxy settings stay in sync between VS Code and terminal
+- ✅ New terminal sessions will automatically have the correct proxy settings (after running `source ~/.zshrc`)
+
+### 中文
+
+当你**启用代理**时，扩展会自动在 `~/.zshrc` 中添加代理环境变量：
+
+```bash
+# ======== Auto Proxy Switcher 代理配置 ========
+# 由 VS Code Auto Proxy Switcher 扩展自动管理
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
+export all_proxy=socks5://127.0.0.1:7891
+# ============================================
+```
+
+当你**禁用代理**时，扩展会自动从 `~/.zshrc` 中移除这些配置。
+
+**优势：**
+- ✅ 终端命令（`curl`、`git`、`npm` 等）自动使用相同的代理
+- ✅ 无需手动管理 shell 代理配置
+- ✅ VS Code 和终端的代理设置保持同步
+- ✅ 新打开的终端会话自动生效（执行 `source ~/.zshrc` 后）
+
+> **Note / 注意:** To apply changes in existing terminal sessions, run: `source ~/.zshrc` / 要在现有终端会话中应用更改，请运行：`source ~/.zshrc`
 
 ---
 
@@ -219,7 +268,13 @@ MIT License
 
 ## 📝 Changelog | 更新日志
 
-### 1.0.3 (Latest)
+### 1.0.4 (Latest)
+- ✅ **Shell environment sync**: Auto-sync proxy config to `~/.zshrc` for terminal use
+- ✅ When enabling proxy: Automatically add environment variables to `~/.zshrc`
+- ✅ When disabling proxy: Automatically remove environment variables from `~/.zshrc`
+- ✅ Terminal commands now automatically use the same proxy settings
+
+### 1.0.3
 - ✅ Add custom globe/proxy icon for better visual identity
 - ✅ Update all references from "Cursor" to "VS Code/Cursor" for broader compatibility
 - ✅ Remove install.sh script (users can install from Marketplace directly)

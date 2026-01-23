@@ -9,4 +9,8 @@ webpack.config.js
 **/*.map
 **/*.ts
 node_modules/**
+ClashX智能代理配置指南.md
+install.sh
+*.vsix
+.idea/**
 
