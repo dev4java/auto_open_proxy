@@ -1,7 +1,7 @@
 {
   "name": "auto-proxy-switcher",
   "displayName": "Auto Proxy Switcher",
-  "description": "自动检测 AI 服务连接状态并智能配置代理 | Automatically detect AI service connectivity and configure proxy",
+  "description": "自定义本地代理 URL/端口（autoProxy.proxyUrl）；可选读取系统代理与环境变量；启用前可确认/改端口或只填端口；http.proxy 仅写入用户设置 | Custom proxy URL/port; optional system/env proxy hint; confirm or enter port before apply; http.proxy in User settings only",
   "version": "1.0.4",
   "icon": "icon.png",
   "publisher": "yusw",
@@ -33,7 +33,10 @@
     "network",
     "vpn",
     "automatic",
-    "switcher"
+    "switcher",
+    "port",
+    "mixed-port",
+    "system-proxy"
   ],
   "engines": {
     "vscode": "^1.80.0"

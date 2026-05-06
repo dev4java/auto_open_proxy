@@ -1,8 +1,8 @@
 # Auto Proxy Switcher
 
-Automatically detect AI service connectivity and intelligently configure HTTP proxy for VS Code/Cursor.
+Automatically detect AI service connectivity and intelligently configure HTTP proxy for VS Code/Cursor. Supports **custom proxy URL/port** in settings, optional **system / environment** proxy detection, and **user-confirmed** port when using detected values. Writes **`http.proxy` to User settings only** (workspace-safe on Cursor).
 
-自动检测 AI 服务连接状态并智能配置代理的 VS Code/Cursor 扩展。
+自动检测 AI 服务连接状态并智能配置 **HTTP 代理**。支持在设置中 **自定义代理地址与端口**、可选 **系统/环境变量** 辅助推断、对检测到的地址进行 **端口确认或手输**；**仅将 `http.proxy` 写入用户设置**，避免工作区写入限制。
 
 ---
 
@@ -29,6 +29,9 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 | ✅ **System proxy hint**: Read macOS / Windows system proxy or env vars when `proxyUrl` is empty | ✅ **系统代理辅助**：`proxyUrl` 为空时尝试读取系统代理或环境变量 |
 | ✅ **User confirms port**: Detected proxy always asks you to confirm or change port (e.g. mixed port ≠ system proxy) | ✅ **端口需确认**：自动检测到的地址会请你确认或改端口（混合端口可能与系统代理不一致） |
 | ✅ **Manual fallback**: Enter port only, full URL, or open settings when nothing is detected | ✅ **手动兜底**：检测不到时可只填端口、完整 URL 或打开设置 |
+| ✅ **Custom port in settings**: Set `autoProxy.proxyUrl` (e.g. `http://127.0.0.1:9810`) — used first when you enable proxy | ✅ **设置里自定义端口**：配置 `autoProxy.proxyUrl`（如混合端口），启用代理时**优先**使用 |
+| ✅ **Notification → settings**: After enabling, use **Open Settings** to jump to `autoProxy.proxyUrl` | ✅ **通知跳转设置**：启用成功通知中可点 **打开设置** 快速改端口 |
+| ✅ **User-scope `http.proxy`**: Extension does not write `http.proxy` to workspace (Cursor-compatible) | ✅ **用户级 http.proxy**：不向工作区写入 `http.proxy`，适配 Cursor 限制 |
 | ✅ **i18n support**: Auto-detect system language (English/Chinese) | ✅ **国际化支持**：自动识别系统语言（中文/英文） |
 
 ---
@@ -228,7 +231,32 @@ MIT License
 
 ## 📝 Changelog | 更新日志
 
-### 1.0.4 (Latest)
+### 1.0.4 (Latest) — 版本说明
+
+**English**
+
+- **Custom proxy / port**: Set `autoProxy.proxyUrl` to your full local URL (any port). This value is **first priority** when you enable proxy while not connected.
+- **No silent “last time” on Enable**: `lastUsedProxyUrl` is **not** used in that flow; use settings, detection, or the input wizard instead.
+- **System / env hint** (optional): When `proxyUrl` is empty and `autoProxy.autoDetectSystemProxy` is on — macOS `scutil`, Windows `netsh winhttp`, then `HTTPS_PROXY` / `HTTP_PROXY` / `ALL_PROXY`.
+- **Confirm detected address**: QuickPick — use as-is, **change port only**, or **enter full URL** (covers mixed ports vs. system proxy, e.g. Clash Verge).
+- **Manual fallback**: If nothing is detected — enter **port only** (`http://127.0.0.1:<port>`), **full URL**, or **open settings**.
+- **`http.proxy` scope**: Written and cleared in **User** settings only; avoids “cannot write workspace” errors on Cursor.
+- **UX**: Success notification includes **Open Settings** → `autoProxy.proxyUrl`; broader **i18n** for UI and logs.
+- **Privacy / scope**: Does not modify shell profiles (`~/.zshrc`, etc.); connectivity checks only hit URLs you configure under `autoProxy.testUrls`.
+
+**中文**
+
+- **自定义端口/地址**：在设置中填写 `autoProxy.proxyUrl`（完整 URL，端口自定），未开代理时点「启用」会**优先**使用该配置。
+- **启用不自动套「上次」**：未开代理时启用**不会**读取 `lastUsedProxyUrl`；请用设置、系统检测或引导输入。
+- **系统/环境辅助**（可关）：`proxyUrl` 为空且开启 `autoProxy.autoDetectSystemProxy` 时，依次尝试 macOS 系统代理、Windows WinHTTP、环境变量中的代理。
+- **检测需确认**：检测到的地址需经 QuickPick — 直接使用、**只改端口** 或 **输入完整 URL**（避免混合端口与系统展示不一致）。
+- **检测失败兜底**：可只输端口、输完整 URL，或 **打开设置** 编辑 `autoProxy.proxyUrl`。
+- **`http.proxy` 作用域**：仅读写**用户设置**中的 `http.proxy`，不写入工作区，避免 Cursor 等工作区写入报错。
+- **体验**：启用成功通知可 **打开设置** 跳转 `autoProxy.proxyUrl`；界面与日志 **中英** 覆盖更完整。
+- **范围**：不修改 shell 配置文件；对外请求仅为你在 `autoProxy.testUrls` 中配置的连通性检测。
+
+#### 简列 | Short checklist
+
 - ✅ **Editor-only proxy**: Only updates VS Code/Cursor `http.proxy` — does **not** modify shell profiles
 - ✅ **User-scope `http.proxy` only**: Avoids writing `http.proxy` to workspace settings (fixes Cursor restriction errors)
 - ✅ **System proxy detection** (`autoProxy.autoDetectSystemProxy`): macOS `scutil`, Windows WinHTTP, then env vars
