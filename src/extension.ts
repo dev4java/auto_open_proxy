@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as os from 'os';
-import * as fs from 'fs';
-import * as path from 'path';
 import fetch from 'node-fetch';
 import { initI18n, t } from './i18n';
+import { invalidateSystemProxyDetectCache } from './proxyDetect';
+import { prepareProxyUrlForUse } from './proxyPrompt';
 
 let checkInterval: NodeJS.Timeout | undefined;
 let networkCheckInterval: NodeJS.Timeout | undefined;
@@ -64,108 +64,17 @@ function getCurrentProxy(): string | undefined {
 }
 
 /**
- * 在 ~/.zshrc 中启用代理配置
+ * 清除用户设置中的 http.proxy。
+ * Cursor 等宿主禁止将 http.proxy 写入工作区/文件夹作用域，故只更新 Global，否则会报错。
  */
-async function enableZshProxy(proxyUrl: string): Promise<void> {
-    try {
-        const zshrcPath = path.join(os.homedir(), '.zshrc');
-        
-        // 解析代理 URL
-        const httpProxy = proxyUrl;
-        const httpsProxy = proxyUrl;
-        const allProxy = proxyUrl.replace('http://', 'socks5://').replace(':7890', ':7891');
-        
-        const proxyLines = [
-            '',
-            '# ======== Auto Proxy Switcher 代理配置 ========',
-            '# 由 VS Code Auto Proxy Switcher 扩展自动管理',
-            `export http_proxy=${httpProxy}`,
-            `export https_proxy=${httpsProxy}`,
-            `export all_proxy=${allProxy}`,
-            '# ============================================',
-            '',
-        ];
-        
-        // 读取现有内容
-        let content = '';
-        if (fs.existsSync(zshrcPath)) {
-            content = fs.readFileSync(zshrcPath, 'utf-8');
-        }
-        
-        // 检查是否已存在配置
-        if (content.includes('# ======== Auto Proxy Switcher 代理配置 ========')) {
-            // 如果存在，先移除旧配置
-            const lines = content.split('\n');
-            const startIndex = lines.findIndex(line => line.includes('# ======== Auto Proxy Switcher 代理配置 ========'));
-            if (startIndex !== -1) {
-                let endIndex = startIndex;
-                for (let i = startIndex + 1; i < lines.length; i++) {
-                    if (lines[i].includes('# ============================================')) {
-                        endIndex = i;
-                        break;
-                    }
-                }
-                lines.splice(startIndex, endIndex - startIndex + 2); // +2 to include end marker and empty line
-                content = lines.join('\n');
-            }
-        }
-        
-        // 添加新配置
-        content = content.trimEnd() + '\n' + proxyLines.join('\n');
-        
-        // 写入文件
-        fs.writeFileSync(zshrcPath, content, 'utf-8');
-        console.log(`[Auto Proxy] 已在 ~/.zshrc 中启用代理配置`);
-    } catch (error) {
-        console.error(`[Auto Proxy] 更新 ~/.zshrc 失败:`, error);
-        vscode.window.showWarningMessage(t('zshrcUpdateFailed'));
+async function clearHttpProxyUserScope(): Promise<void> {
+    const root = vscode.workspace.getConfiguration('http');
+    await root.update('proxy', undefined, vscode.ConfigurationTarget.Global);
+    if (getCurrentProxy()?.trim()) {
+        await root.update('proxy', '', vscode.ConfigurationTarget.Global);
     }
-}
-
-/**
- * 在 ~/.zshrc 中禁用代理配置
- */
-async function disableZshProxy(): Promise<void> {
-    try {
-        const zshrcPath = path.join(os.homedir(), '.zshrc');
-        
-        if (!fs.existsSync(zshrcPath)) {
-            return;
-        }
-        
-        // 读取现有内容
-        let content = fs.readFileSync(zshrcPath, 'utf-8');
-        
-        // 查找并移除配置块
-        if (content.includes('# ======== Auto Proxy Switcher 代理配置 ========')) {
-            const lines = content.split('\n');
-            const startIndex = lines.findIndex(line => line.includes('# ======== Auto Proxy Switcher 代理配置 ========'));
-            if (startIndex !== -1) {
-                let endIndex = startIndex;
-                for (let i = startIndex + 1; i < lines.length; i++) {
-                    if (lines[i].includes('# ============================================')) {
-                        endIndex = i;
-                        break;
-                    }
-                }
-                
-                // 移除配置块（包括前后的空行）
-                if (startIndex > 0 && lines[startIndex - 1].trim() === '') {
-                    lines.splice(startIndex - 1, endIndex - startIndex + 3);
-                } else {
-                    lines.splice(startIndex, endIndex - startIndex + 2);
-                }
-                
-                content = lines.join('\n');
-                
-                // 写入文件
-                fs.writeFileSync(zshrcPath, content, 'utf-8');
-                console.log(`[Auto Proxy] 已在 ~/.zshrc 中禁用代理配置`);
-            }
-        }
-    } catch (error) {
-        console.error(`[Auto Proxy] 更新 ~/.zshrc 失败:`, error);
-        vscode.window.showWarningMessage(t('zshrcUpdateFailed'));
+    if (getCurrentProxy()?.trim()) {
+        void vscode.window.showWarningMessage(t('msgHttpProxyMayRemainFromWorkspace'));
     }
 }
 
@@ -175,17 +84,14 @@ async function disableZshProxy(): Promise<void> {
 async function setProxy(proxyUrl: string): Promise<void> {
     const config = vscode.workspace.getConfiguration('http');
     await config.update('proxy', proxyUrl, vscode.ConfigurationTarget.Global);
-    
+
     // 保存当前设置的代理地址
     const autoProxyConfig = vscode.workspace.getConfiguration('autoProxy');
     await autoProxyConfig.update('lastUsedProxyUrl', proxyUrl, vscode.ConfigurationTarget.Global);
-    
-    // 同时在 ~/.zshrc 中启用代理配置
-    await enableZshProxy(proxyUrl);
-    
+
     isProxyEnabled = true;
     updateStatusBar();
-    console.log(`[Auto Proxy] 代理已设置并保存: ${proxyUrl}`);
+    console.log(`[Auto Proxy] ${t('logProxyWritten')}: ${proxyUrl}`);
 }
 
 /**
@@ -197,19 +103,14 @@ async function removeProxy(): Promise<void> {
     if (currentProxy && currentProxy.trim() !== '') {
         const autoProxyConfig = vscode.workspace.getConfiguration('autoProxy');
         await autoProxyConfig.update('lastUsedProxyUrl', currentProxy, vscode.ConfigurationTarget.Global);
-        console.log(`[Auto Proxy] 已保存代理地址: ${currentProxy}`);
+        console.log(`[Auto Proxy] ${t('logPersistedProxyAddress')}: ${currentProxy}`);
     }
-    
-    // 清空代理配置
-    const httpConfig = vscode.workspace.getConfiguration('http');
-    await httpConfig.update('proxy', undefined, vscode.ConfigurationTarget.Global);
-    
-    // 同时在 ~/.zshrc 中禁用代理配置
-    await disableZshProxy();
-    
+
+    await clearHttpProxyUserScope();
+
     isProxyEnabled = false;
     updateStatusBar();
-    console.log(`[Auto Proxy] 代理配置已清空`);
+    console.log(`[Auto Proxy] ${t('logHttpProxyClearedShort')}`);
 }
 
 /**
@@ -231,20 +132,9 @@ function updateStatusBar(): void {
 }
 
 /**
- * 获取要使用的代理地址（优先使用上次保存的）
- */
-function getProxyUrlToUse(): string {
-    const config = vscode.workspace.getConfiguration('autoProxy');
-    const lastUsedProxy: string = config.get('lastUsedProxyUrl', '');
-    const defaultProxy: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
-    return lastUsedProxy && lastUsedProxy.trim() !== '' ? lastUsedProxy : defaultProxy;
-}
-
-/**
  * 执行连接检查（询问模式 - 启动时使用）
  */
 async function performCheckAndAsk(): Promise<void> {
-    const proxyUrl = getProxyUrlToUse();
     const currentProxy = getCurrentProxy();
 
     console.log(`[Auto Proxy] ${t('networkCheckStart')}`);
@@ -284,9 +174,9 @@ async function performCheckAndAsk(): Promise<void> {
         console.log(`[Auto Proxy] ${t('networkNotAccessible')}`);
         
         if (!currentProxy || currentProxy.trim() === '') {
-            // 当前没有代理，询问是否启用
+            // 当前没有代理，询问是否启用（启用时会确认/输入端口，尤其是系统检测结果）
             const action = await vscode.window.showWarningMessage(
-                `${t('msgNetworkFail')} (${proxyUrl})`,
+                `${t('msgNetworkFail')}\n${t('msgNetworkFailConfirmHint')}`,
                 { modal: false },
                 t('msgAction_EnableProxy'),
                 t('msgAction_DontEnable'),
@@ -294,15 +184,22 @@ async function performCheckAndAsk(): Promise<void> {
             );
 
             if (action === t('msgAction_EnableProxy')) {
+                const proxyUrl = await prepareProxyUrlForUse();
+                if (!proxyUrl) {
+                    return;
+                }
                 await setProxy(proxyUrl);
                 vscode.window.showInformationMessage(
-                    `${t('msgProxyEnabled')}\n${t('msgProxyEnsureRunning')}`,
+                    `${t('msgProxyEnabled')}: ${proxyUrl}\n${t('msgProxyEnsureRunning')}`,
                     t('msgAction_DisableProxy'),
+                    t('msgAction_OpenSettings'),
                     t('msgAction_Ok')
                 ).then(async (btn) => {
                     if (btn === t('msgAction_DisableProxy')) {
                         await removeProxy();
                         vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                    } else if (btn === t('msgAction_OpenSettings')) {
+                        await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
                     }
                 });
             } else if (action === t('msgAction_NoMoreTips')) {
@@ -314,7 +211,7 @@ async function performCheckAndAsk(): Promise<void> {
         } else {
             // 已有代理配置，提示状态
             vscode.window.showInformationMessage(
-                `ℹ️ ${t('networkNotAccessible')}\n${t('msgAction_KeepProxy')}: ${currentProxy}`,
+                `${t('msgKeepProxyWhileUnreachable')}\n${currentProxy}`,
                 t('msgAction_DisableProxy'),
                 t('msgAction_Ok')
             ).then(async (action) => {
@@ -338,54 +235,62 @@ async function performAutoCheck(): Promise<void> {
         return;
     }
 
-    const proxyUrl = getProxyUrlToUse();
     const currentProxy = getCurrentProxy();
 
-    console.log(`[Auto Proxy] 定时检测 AI 服务连接状态...`);
+    console.log(`[Auto Proxy] ${t('logCheckStarted')}`);
 
     const canConnect = await checkAIServiceConnection();
 
     if (canConnect) {
         // 可以连接，不需要代理
-        console.log('[Auto Proxy] ✅ AI 服务可访问，无需代理');
+        console.log(`[Auto Proxy] ${t('networkAccessible')}`);
         
         if (currentProxy && currentProxy.trim() !== '') {
             // 当前有代理配置，自动移除并提示
             await removeProxy();
-            console.log('[Auto Proxy] 已自动移除代理配置');
-            showAutoCloseMessage('✅ AI 服务可直接访问，已自动移除代理配置', 10000);
+            console.log(`[Auto Proxy] ${t('logProxyRemovedBecauseDirect')}`);
+            showAutoCloseMessage(t('msgAutoCheckDirectRemovedProxy'), 10000);
         }
     } else {
         // 无法连接，需要代理
-        console.log('[Auto Proxy] ❌ AI 服务无法访问');
+        console.log(`[Auto Proxy] ${t('networkNotAccessible')}`);
         
         if (!currentProxy || currentProxy.trim() === '') {
-            // 当前没有代理，询问是否启用
-            showAutoCloseMessage('⚠️ 无法连接 AI 服务，建议启用代理', 10000);
-            
+            showAutoCloseMessage(t('msgAutoCheckBanner'), 10000);
+
             const action = await vscode.window.showWarningMessage(
-                `⚠️ 无法连接 AI 服务，是否启用代理？`,
+                `${t('msgNetworkFail')}\n${t('msgNetworkFailConfirmHint')}`,
                 { modal: false },
-                '启用代理',
-                '不启用',
-                '停止检测'
+                t('msgAction_EnableProxy'),
+                t('msgAction_DontEnable'),
+                t('msgAction_StopCheck')
             );
 
-            if (action === '启用代理') {
+            if (action === t('msgAction_EnableProxy')) {
+                const proxyUrl = await prepareProxyUrlForUse();
+                if (!proxyUrl) {
+                    return;
+                }
                 await setProxy(proxyUrl);
-                showAutoCloseMessage(`✅ 已自动启用代理: ${proxyUrl}`, 10000);
-                vscode.window.showInformationMessage(
-                    '✅ 已启用代理，请确保代理服务正在运行',
-                    '禁用代理'
-                ).then(async (btn) => {
-                    if (btn === '禁用代理') {
-                        await removeProxy();
-                        vscode.window.showInformationMessage('✅ 已禁用代理');
-                    }
-                });
-            } else if (action === '停止检测') {
-                const config = vscode.workspace.getConfiguration('autoProxy');
-                await config.update('enabled', false, vscode.ConfigurationTarget.Global);
+                showAutoCloseMessage(`${t('msgProxyEnabled')}: ${proxyUrl}`, 10000);
+                vscode.window
+                    .showInformationMessage(
+                        `${t('msgProxyEnabled')}: ${proxyUrl}\n${t('msgProxyEnsureRunning')}`,
+                        t('msgAction_DisableProxy'),
+                        t('msgAction_OpenSettings'),
+                        t('msgAction_Ok')
+                    )
+                    .then(async (btn) => {
+                        if (btn === t('msgAction_DisableProxy')) {
+                            await removeProxy();
+                            vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                        } else if (btn === t('msgAction_OpenSettings')) {
+                            await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
+                        }
+                    });
+            } else if (action === t('msgAction_StopCheck')) {
+                const cfg = vscode.workspace.getConfiguration('autoProxy');
+                await cfg.update('enabled', false, vscode.ConfigurationTarget.Global);
                 stopAutoCheck();
             }
         }
@@ -429,8 +334,8 @@ function startNetworkMonitor(): void {
     networkCheckInterval = setInterval(() => {
         const currentState = getNetworkState();
         if (lastNetworkState && currentState !== lastNetworkState) {
-            console.log('[Auto Proxy] 🔄 检测到网络变化，触发检测');
-            showAutoCloseMessage('🔄 检测到网络变化，正在检测 AI 服务连接状态...', 10000);
+            console.log(`[Auto Proxy] ${t('logNetworkChangeTriggered')}`);
+            showAutoCloseMessage(t('msgNetworkChangeRechecking'), 10000);
             
             // 延迟1秒后检测，让网络稳定
             setTimeout(() => {
@@ -480,7 +385,7 @@ function startAutoCheck(runImmediately: boolean = false): void {
     isAutoCheckRunning = true;
     updateStatusBar();
     console.log(`[Auto Proxy] ${t('logInterval')}: ${intervalSeconds}s`);
-    console.log('[Auto Proxy] 网络变化监听已启动');
+    console.log(`[Auto Proxy] ${t('logNetworkMonitorOn')}`);
 }
 
 /**
@@ -494,7 +399,7 @@ function stopAutoCheck(): void {
     stopNetworkMonitor();
     isAutoCheckRunning = false;
     updateStatusBar();
-    console.log('[Auto Proxy] 已停止自动检查');
+    console.log(`[Auto Proxy] ${t('logAutoCheckStoppedShort')}`);
 }
 
 /**
@@ -505,7 +410,7 @@ export function activate(context: vscode.ExtensionContext) {
     initI18n(vscode.env.language);
     
     console.log(`[Auto Proxy] ${t('logActivated')}`);
-    console.log('[Auto Proxy] 插件已激活');
+    console.log(`[Auto Proxy] ${t('logExtensionReady')}`);
 
     // 创建状态栏项
     statusBarItem = vscode.window.createStatusBarItem(
@@ -519,7 +424,7 @@ export function activate(context: vscode.ExtensionContext) {
     updateStatusBar();
 
     context.subscriptions.push(statusBarItem);
-    console.log('[Auto Proxy] 状态栏已创建');
+    console.log(`[Auto Proxy] ${t('logStatusBarCreated')}`);
 
     // 注册命令：手动检查连接
     const checkConnectionCommand = vscode.commands.registerCommand(
@@ -533,25 +438,27 @@ export function activate(context: vscode.ExtensionContext) {
     const enableProxyCommand = vscode.commands.registerCommand(
         'auto-proxy.enableProxy',
         async () => {
-            const config = vscode.workspace.getConfiguration('autoProxy');
-            // 优先使用上次保存的代理地址，如果没有才使用默认值
-            const lastUsedProxy: string = config.get('lastUsedProxyUrl', '');
-            const defaultProxy: string = config.get('proxyUrl', 'http://127.0.0.1:7890');
-            const proxyUrl = lastUsedProxy && lastUsedProxy.trim() !== '' ? lastUsedProxy : defaultProxy;
-            
-            console.log(`[Auto Proxy] 启用代理: ${proxyUrl} (上次使用: ${lastUsedProxy || '无'})`);
-            
+            const proxyUrl = await prepareProxyUrlForUse();
+            if (!proxyUrl) {
+                return;
+            }
+            console.log(`[Auto Proxy] ${t('logManualEnableProxy')}: ${proxyUrl}`);
             await setProxy(proxyUrl);
-            vscode.window.showInformationMessage(
-                `✅ 已启用代理: ${proxyUrl}\n请确保代理服务正在运行`,
-                '禁用代理',
-                '确定'
-            ).then(async (action) => {
-                if (action === '禁用代理') {
-                    await removeProxy();
-                    vscode.window.showInformationMessage('✅ 已禁用代理');
-                }
-            });
+            vscode.window
+                .showInformationMessage(
+                    `${t('msgProxyEnabled')}: ${proxyUrl}\n${t('msgProxyEnsureRunning')}`,
+                    t('msgAction_DisableProxy'),
+                    t('msgAction_OpenSettings'),
+                    t('msgAction_Ok')
+                )
+                .then(async (action) => {
+                    if (action === t('msgAction_DisableProxy')) {
+                        await removeProxy();
+                        vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                    } else if (action === t('msgAction_OpenSettings')) {
+                        await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
+                    }
+                });
         }
     );
 
@@ -564,10 +471,12 @@ export function activate(context: vscode.ExtensionContext) {
                 t('msgProxyDisabled'),
                 t('msgAction_EnableProxy'),
                 t('msgAction_Ok')
-            ).then((action) => {
+            ).then(async (action) => {
                 if (action === t('msgAction_EnableProxy')) {
-                    const proxyUrl = getProxyUrlToUse();
-                    setProxy(proxyUrl);
+                    const proxyUrl = await prepareProxyUrlForUse();
+                    if (proxyUrl) {
+                        await setProxy(proxyUrl);
+                    }
                 }
             });
         }
@@ -622,12 +531,13 @@ export function activate(context: vscode.ExtensionContext) {
         stopAutoCheckCommand,
         startAutoCheckCommand
     );
-    console.log('[Auto Proxy] 所有命令已注册');
+    console.log(`[Auto Proxy] ${t('logCommandsRegistered')}`);
 
     // 监听配置变化
     const configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('autoProxy')) {
-            console.log('[Auto Proxy] 配置已更改，重启自动检查');
+            invalidateSystemProxyDetectCache();
+            console.log(`[Auto Proxy] ${t('logSettingsChangedRestartAutoCheck')}`);
             const config = vscode.workspace.getConfiguration('autoProxy');
             const enabled: boolean = config.get('enabled', true);
             
@@ -649,13 +559,13 @@ export function activate(context: vscode.ExtensionContext) {
     
     if (enabled) {
         // 启动定时检查，并立即执行一次检测
-        console.log('[Auto Proxy] 准备启动自动检查并立即执行检测');
+        console.log(`[Auto Proxy] ${t('logWillRunAutoCheckImmediate')}`);
         startAutoCheck(true);
     } else {
-        console.log('[Auto Proxy] 自动检测已禁用，不执行初始检测');
+        console.log(`[Auto Proxy] ${t('logAutoCheckDisabledNoInitial')}`);
     }
     
-    console.log('[Auto Proxy] ========== 插件激活完成 ==========');
+    console.log(`[Auto Proxy] ${t('logExtensionActivateComplete')}`);
 }
 
 /**

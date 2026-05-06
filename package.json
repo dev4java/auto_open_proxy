@@ -87,8 +87,13 @@
         },
         "autoProxy.proxyUrl": {
           "type": "string",
-          "default": "http://127.0.0.1:7890",
-          "description": "代理服务器地址"
+          "default": "",
+          "description": "本地代理地址（须包含端口）。留空时可配合「自动检测系统代理」从 macOS/Windows 系统或环境变量读取"
+        },
+        "autoProxy.autoDetectSystemProxy": {
+          "type": "boolean",
+          "default": true,
+          "description": "当未填写 proxyUrl 且无上次使用的地址时，尝试从系统代理（macOS scutil / Windows WinHTTP）或 HTTPS_PROXY 等环境变量检测"
         },
         "autoProxy.testUrls": {
           "type": "array",
@@ -107,7 +112,7 @@
         "autoProxy.lastUsedProxyUrl": {
           "type": "string",
           "default": "",
-          "description": "上次使用的代理地址（自动保存）"
+          "description": "禁用代理时从 http.proxy 回写的记录（启用代理时不再自动使用此项，请配置 proxyUrl 或使用检测/输入）"
         }
       }
     }

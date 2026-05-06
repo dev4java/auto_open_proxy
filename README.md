@@ -25,8 +25,10 @@ When you need to access AI services (like Claude, OpenAI) through a network prox
 | ✅ **One-click toggle**: Click status bar to enable/disable proxy | ✅ **一键切换**：状态栏点击即可启用/禁用代理 |
 | ✅ **Periodic check**: Background periodic network check (configurable) | ✅ **定时检测**：后台定时检测网络变化（可配置） |
 | ✅ **Network change detection**: Automatically re-check when network changes | ✅ **网络变化检测**：检测到网络切换时自动重新检测 |
-| ✅ **Proxy memory**: Remember your last used proxy configuration | ✅ **代理记忆**：记住你上次使用的代理配置 |
-| ✅ **Shell environment sync**: Auto-sync proxy config to `~/.zshrc` for terminal use | ✅ **终端环境同步**：自动同步代理配置到 `~/.zshrc`，终端也能使用代理 |
+| ✅ **Disable snapshot**: Saves a copy to `lastUsedProxyUrl` when you disable (not auto-used on Enable) | ✅ **禁用快照**：禁用时写入 `lastUsedProxyUrl`（未开代理时点「启用」不会自动用） |
+| ✅ **System proxy hint**: Read macOS / Windows system proxy or env vars when `proxyUrl` is empty | ✅ **系统代理辅助**：`proxyUrl` 为空时尝试读取系统代理或环境变量 |
+| ✅ **User confirms port**: Detected proxy always asks you to confirm or change port (e.g. mixed port ≠ system proxy) | ✅ **端口需确认**：自动检测到的地址会请你确认或改端口（混合端口可能与系统代理不一致） |
+| ✅ **Manual fallback**: Enter port only, full URL, or open settings when nothing is detected | ✅ **手动兜底**：检测不到时可只填端口、完整 URL 或打开设置 |
 | ✅ **i18n support**: Auto-detect system language (English/Chinese) | ✅ **国际化支持**：自动识别系统语言（中文/英文） |
 
 ---
@@ -80,7 +82,8 @@ Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux), type `Auto Proxy`
 
 | Scenario | Behavior | 场景 | 行为 |
 |----------|----------|------|------|
-| AI services unreachable | Prompt to enable proxy | 无法访问 AI 服务 | 弹窗询问是否启用代理 |
+| AI services unreachable | Prompt to enable proxy; then QuickPick / InputBox to confirm detected URL, change port, or type full URL | 无法访问 AI 服务 | 询问是否启用 → 用 QuickPick/输入框确认检测地址、改端口或填完整 URL |
+| Nothing detected | Choose: port-only (`http://127.0.0.1:<port>`), full URL, or open settings | 未检测到代理 | 可选：只填端口、完整 URL、打开设置 |
 | AI services accessible | Notify network is OK | 可以访问 AI 服务 | 提示网络正常 |
 
 ---
@@ -95,15 +98,17 @@ Open VS Code/Cursor settings (`Cmd+,` or `Ctrl+,`), search for `autoProxy`:
 |---------|---------|-------------|------|
 | `autoProxy.enabled` | `true` | Enable auto-detection | 是否启用自动检测 |
 | `autoProxy.checkInterval` | `60` | Check interval (seconds) | 检测间隔（秒） |
-| `autoProxy.proxyUrl` | `http://127.0.0.1:7890` | Default proxy address | 默认代理地址 |
+| `autoProxy.proxyUrl` | _(empty)_ | Local proxy URL (must include port). If empty, see `autoDetectSystemProxy` | 本地代理完整 URL（须含端口）；留空则走系统/环境检测 |
+| `autoProxy.autoDetectSystemProxy` | `true` | When `proxyUrl` is empty, read macOS (`scutil`), Windows (`netsh winhttp`), then env `HTTPS_PROXY` / `HTTP_PROXY` | `proxyUrl` 为空时，是否从系统代理或环境变量推断 |
+| `autoProxy.lastUsedProxyUrl` | _(empty)_ | Snapshot when disabling (not used when you click Enable with no proxy) | 禁用时回写；未开代理时点「启用」不会自动用此项，请配 `proxyUrl` 或检测/输入 |
 | `autoProxy.testUrls` | AI service URLs | URLs to test connectivity | 测试连接的 URL 列表 |
 | `autoProxy.timeout` | `5000` | Connection timeout (ms) | 连接超时时间（毫秒） |
 
 ### Customize Proxy Address | 修改代理地址
 
-The extension will use your configured proxy address (default: `http://127.0.0.1:7890`). If your proxy runs on a different port, modify the configuration:
+Configure your local proxy URL here (example below). The extension does **not** modify shell profiles such as `~/.zshrc`; terminal tools need their own proxy setup if required.
 
-扩展会使用你配置的代理地址（默认：`http://127.0.0.1:7890`）。如果你的代理运行在不同的端口，请修改配置：
+在此填写本地代理完整地址（示例见下）。扩展**不会**修改 `~/.zshrc` 等 shell 配置文件；若终端命令也需要走代理，请自行配置终端环境。
 
 ```json
 {
@@ -116,60 +121,13 @@ The extension will use your configured proxy address (default: `http://127.0.0.1
 | Software | Port | 软件 | 端口 |
 |----------|------|------|------|
 | Clash | 7890 | Clash | 7890 |
+| Clash Verge (example mixed HTTP) | varies (e.g. 9810) | Clash Verge 等（混合端口因配置而异） | 以客户端显示为准 |
 | V2Ray | 10808 | V2Ray | 10808 |
 | Shadowsocks | 1080 | Shadowsocks | 1080 |
 
-> **Note:** The extension remembers your last manually configured proxy address, so if you change it in VS Code/Cursor settings, it will be used next time.
+> **Note:** When you click **Enable** with no proxy active, priority is **`autoProxy.proxyUrl` → (optional) system/env detection → prompts**. `lastUsedProxyUrl` is **not** used for that flow. `http.proxy` is written to **User** settings only (Cursor may forbid writing it to workspace settings). Detection does **not** know which app you use; you must still **confirm** detected addresses when applicable.
 >
-> **注意:** 扩展会记住你上次手动配置的代理地址，因此如果你在 VS Code/Cursor 设置中修改了代理，下次会使用你修改的地址。
-
----
-
-## 🖥️ Shell Environment Sync | 终端环境同步
-
-### English
-
-When you **enable proxy**, the extension automatically adds proxy environment variables to your `~/.zshrc`:
-
-```bash
-# ======== Auto Proxy Switcher 代理配置 ========
-# 由 VS Code Auto Proxy Switcher 扩展自动管理
-export http_proxy=http://127.0.0.1:7890
-export https_proxy=http://127.0.0.1:7890
-export all_proxy=socks5://127.0.0.1:7891
-# ============================================
-```
-
-When you **disable proxy**, the extension automatically removes these lines from `~/.zshrc`.
-
-**Benefits:**
-- ✅ Terminal commands (`curl`, `git`, `npm`, etc.) automatically use the same proxy
-- ✅ No need to manually manage shell proxy configuration
-- ✅ Proxy settings stay in sync between VS Code and terminal
-- ✅ New terminal sessions will automatically have the correct proxy settings (after running `source ~/.zshrc`)
-
-### 中文
-
-当你**启用代理**时，扩展会自动在 `~/.zshrc` 中添加代理环境变量：
-
-```bash
-# ======== Auto Proxy Switcher 代理配置 ========
-# 由 VS Code Auto Proxy Switcher 扩展自动管理
-export http_proxy=http://127.0.0.1:7890
-export https_proxy=http://127.0.0.1:7890
-export all_proxy=socks5://127.0.0.1:7891
-# ============================================
-```
-
-当你**禁用代理**时，扩展会自动从 `~/.zshrc` 中移除这些配置。
-
-**优势：**
-- ✅ 终端命令（`curl`、`git`、`npm` 等）自动使用相同的代理
-- ✅ 无需手动管理 shell 代理配置
-- ✅ VS Code 和终端的代理设置保持同步
-- ✅ 新打开的终端会话自动生效（执行 `source ~/.zshrc` 后）
-
-> **Note / 注意:** To apply changes in existing terminal sessions, run: `source ~/.zshrc` / 要在现有终端会话中应用更改，请运行：`source ~/.zshrc`
+> **注意：** 当前未使用代理时点「启用」，顺序为 **设置里的 `autoProxy.proxyUrl` →（可选）系统/环境检测 → 引导输入**；**不会**自动使用 `lastUsedProxyUrl`。`http.proxy` 仅写入**用户设置**（Cursor 等工作区写入可能被禁止）。扩展无法识别「具体是哪款软件」；检测到地址时仍可能需在界面 **确认**。
 
 ---
 
@@ -177,17 +135,19 @@ export all_proxy=socks5://127.0.0.1:7891
 
 ### English:
 1. **On startup**: Check AI service connectivity (Claude, OpenAI, etc.)
-2. **If unreachable**: Prompt to enable proxy with configured address
-3. **If accessible**: Automatically remove proxy configuration
+2. **If unreachable**: Offer to enable proxy; resolve URL from `proxyUrl` → system/env (if enabled) → prompts; **detected** URLs require QuickPick confirmation or port/URL input
+3. **If accessible**: Automatically remove proxy configuration (when periodic/network-change checks run)
 4. **Periodic check**: Background check every 60 seconds (configurable) and auto-adjust
 5. **Network change**: Detect network interface changes and re-check immediately
+6. **Never modifies shell profiles** (`~/.zshrc`, etc.) — only VS Code/Cursor `http.proxy`
 
 ### 中文:
 1. **启动时**：检测 AI 服务（Claude、OpenAI 等）连接状态
-2. **无法连接**：询问是否配置代理（使用配置的地址）
-3. **能够连接**：自动移除代理配置
+2. **无法连接**：询问是否启用代理；地址顺序为「`proxyUrl` → 系统/环境检测 → 输入」；**检测到的地址**必须用 QuickPick 确认或改端口/输入完整 URL
+3. **能够连接**：在定时/网络变化检测中自动移除多余代理配置
 4. **定时检测**：每 60 秒（可配置）后台检测并自动调整
 5. **网络变化**：检测到网络接口变化时立即重新检测
+6. **不修改 shell 配置**（如 `~/.zshrc`），只改编辑器内的 `http.proxy`
 
 ---
 
@@ -269,10 +229,14 @@ MIT License
 ## 📝 Changelog | 更新日志
 
 ### 1.0.4 (Latest)
-- ✅ **Shell environment sync**: Auto-sync proxy config to `~/.zshrc` for terminal use
-- ✅ When enabling proxy: Automatically add environment variables to `~/.zshrc`
-- ✅ When disabling proxy: Automatically remove environment variables from `~/.zshrc`
-- ✅ Terminal commands now automatically use the same proxy settings
+- ✅ **Editor-only proxy**: Only updates VS Code/Cursor `http.proxy` — does **not** modify shell profiles
+- ✅ **User-scope `http.proxy` only**: Avoids writing `http.proxy` to workspace settings (fixes Cursor restriction errors)
+- ✅ **System proxy detection** (`autoProxy.autoDetectSystemProxy`): macOS `scutil`, Windows WinHTTP, then env vars
+- ✅ **User must confirm detected URL**: QuickPick to accept, change port only, or enter full URL (handles mixed-port clients like Clash Verge)
+- ✅ **Enable with no proxy**: Uses `proxyUrl` / detection / prompts — not `lastUsedProxyUrl`
+- ✅ **When detection fails**: Prompt for port-only (`http://127.0.0.1:<port>`), full URL, or open settings
+- ✅ **i18n** for remaining UI/log strings; notification can open `autoProxy.proxyUrl` settings
+- ✅ README aligned with runtime behavior
 
 ### 1.0.3
 - ✅ Add custom globe/proxy icon for better visual identity
