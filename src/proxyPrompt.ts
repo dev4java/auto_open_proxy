@@ -8,11 +8,11 @@ export type ProxyResolution =
     | { kind: 'none' };
 
 interface ActionPickItem extends vscode.QuickPickItem {
-    readonly action: 'use' | 'port' | 'full';
+    readonly action: 'use' | 'port' | 'full' | 'cancel';
 }
 
 interface MissingPickItem extends vscode.QuickPickItem {
-    readonly action: 'port' | 'full' | 'settings';
+    readonly action: 'port' | 'full' | 'settings' | 'cancel';
 }
 
 function parseProxyParts(urlStr: string): { scheme: string; host: string; port: string } {
@@ -85,15 +85,18 @@ async function confirmDetectedProxyUrl(detectedUrl: string): Promise<string | un
             description: t('proxyPickEnterFullDesc'),
             action: 'full',
         },
+        {
+            label: t('proxyCancel'),
+            action: 'cancel',
+        },
     ];
 
     const picked = await vscode.window.showQuickPick<ActionPickItem>(items, {
         title: t('proxyConfirmDetectedTitle'),
         placeHolder: t('proxyConfirmDetectedPlaceholder'),
-        ignoreFocusOut: true,
     });
 
-    if (!picked) {
+    if (!picked || picked.action === 'cancel') {
         return undefined;
     }
 
@@ -109,7 +112,6 @@ async function confirmDetectedProxyUrl(detectedUrl: string): Promise<string | un
             prompt: t('proxyInputPortPrompt'),
             value: parts.port,
             placeHolder: '7890 / 9810 …',
-            ignoreFocusOut: true,
             validateInput: validatePortText,
         });
         if (!port?.trim()) {
@@ -122,7 +124,6 @@ async function confirmDetectedProxyUrl(detectedUrl: string): Promise<string | un
         title: t('proxyInputFullTitle'),
         prompt: t('proxyInputFullPrompt'),
         value: detectedUrl,
-        ignoreFocusOut: true,
         validateInput: validateAbsoluteUrl,
     });
     return full?.trim();
@@ -145,15 +146,18 @@ async function promptProxyWhenMissing(): Promise<string | undefined> {
             description: 'autoProxy.proxyUrl',
             action: 'settings',
         },
+        {
+            label: t('proxyCancel'),
+            action: 'cancel',
+        },
     ];
 
     const picked = await vscode.window.showQuickPick<MissingPickItem>(items, {
         title: t('proxyMissingTitle'),
         placeHolder: t('proxyMissingPlaceholder'),
-        ignoreFocusOut: true,
     });
 
-    if (!picked) {
+    if (!picked || picked.action === 'cancel') {
         return undefined;
     }
 
@@ -167,7 +171,6 @@ async function promptProxyWhenMissing(): Promise<string | undefined> {
             title: t('proxyInputPortTitle'),
             prompt: t('proxyInputPortPrompt'),
             placeHolder: '9810',
-            ignoreFocusOut: true,
             validateInput: validatePortText,
         });
         if (!port?.trim()) {
@@ -180,7 +183,6 @@ async function promptProxyWhenMissing(): Promise<string | undefined> {
         title: t('proxyInputFullTitle'),
         prompt: t('proxyInputFullPrompt'),
         placeHolder: 'http://127.0.0.1:9810',
-        ignoreFocusOut: true,
         validateInput: validateAbsoluteUrl,
     });
     return full?.trim();

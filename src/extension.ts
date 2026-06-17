@@ -74,7 +74,7 @@ async function clearHttpProxyUserScope(): Promise<void> {
         await root.update('proxy', '', vscode.ConfigurationTarget.Global);
     }
     if (getCurrentProxy()?.trim()) {
-        void vscode.window.showWarningMessage(t('msgHttpProxyMayRemainFromWorkspace'));
+        void vscode.window.showWarningMessage(t('msgHttpProxyMayRemainFromWorkspace'), t('msgAction_Ok'));
     }
 }
 
@@ -156,7 +156,7 @@ async function performCheckAndAsk(): Promise<void> {
 
             if (action === t('msgNetworkOkAction1')) {
                 await removeProxy();
-                vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                vscode.window.showInformationMessage(t('msgProxyDisabled'), t('msgAction_Ok'));
             } else if (action === t('msgNetworkOkAction3')) {
                 const config = vscode.workspace.getConfiguration('autoProxy');
                 await config.update('enabled', false, vscode.ConfigurationTarget.Global);
@@ -197,7 +197,7 @@ async function performCheckAndAsk(): Promise<void> {
                 ).then(async (btn) => {
                     if (btn === t('msgAction_DisableProxy')) {
                         await removeProxy();
-                        vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                        vscode.window.showInformationMessage(t('msgProxyDisabled'), t('msgAction_Ok'));
                     } else if (btn === t('msgAction_OpenSettings')) {
                         await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
                     }
@@ -206,7 +206,7 @@ async function performCheckAndAsk(): Promise<void> {
                 const config = vscode.workspace.getConfiguration('autoProxy');
                 await config.update('enabled', false, vscode.ConfigurationTarget.Global);
                 stopAutoCheck();
-                vscode.window.showInformationMessage(t('msgAutoCheckStopped'));
+                vscode.window.showInformationMessage(t('msgAutoCheckStopped'), t('msgAction_Ok'));
             }
         } else {
             // 已有代理配置，提示状态
@@ -217,7 +217,7 @@ async function performCheckAndAsk(): Promise<void> {
             ).then(async (action) => {
                 if (action === t('msgAction_DisableProxy')) {
                     await removeProxy();
-                    vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                    vscode.window.showInformationMessage(t('msgProxyDisabled'), t('msgAction_Ok'));
                 }
             });
         }
@@ -283,7 +283,7 @@ async function performAutoCheck(): Promise<void> {
                     .then(async (btn) => {
                         if (btn === t('msgAction_DisableProxy')) {
                             await removeProxy();
-                            vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                            vscode.window.showInformationMessage(t('msgProxyDisabled'), t('msgAction_Ok'));
                         } else if (btn === t('msgAction_OpenSettings')) {
                             await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
                         }
@@ -320,10 +320,7 @@ function getNetworkState(): string {
  * 显示自动消失的提示
  */
 function showAutoCloseMessage(message: string, timeoutMs: number = 10000): void {
-    const disposable = vscode.window.setStatusBarMessage(message, timeoutMs);
-    
-    // 同时显示一个通知（不会自动关闭，但用户可以手动关闭）
-    vscode.window.showInformationMessage(message);
+    vscode.window.setStatusBarMessage(message, timeoutMs);
 }
 
 /**
@@ -454,7 +451,7 @@ export function activate(context: vscode.ExtensionContext) {
                 .then(async (action) => {
                     if (action === t('msgAction_DisableProxy')) {
                         await removeProxy();
-                        vscode.window.showInformationMessage(t('msgProxyDisabled'));
+                        vscode.window.showInformationMessage(t('msgProxyDisabled'), t('msgAction_Ok'));
                     } else if (action === t('msgAction_OpenSettings')) {
                         await vscode.commands.executeCommand('workbench.action.openSettings', 'autoProxy.proxyUrl');
                     }
@@ -493,10 +490,10 @@ export function activate(context: vscode.ExtensionContext) {
             
             if (!enabled) {
                 startAutoCheck();
-                vscode.window.showInformationMessage(t('msgAutoCheckResumed'), t('msgAction_OpenSettings'));
+                vscode.window.showInformationMessage(t('msgAutoCheckResumed'), t('msgAction_OpenSettings'), t('msgAction_Ok'));
             } else {
                 stopAutoCheck();
-                vscode.window.showInformationMessage(t('msgAutoCheckPaused'), t('msgAction_OpenSettings'));
+                vscode.window.showInformationMessage(t('msgAutoCheckPaused'), t('msgAction_OpenSettings'), t('msgAction_Ok'));
             }
         }
     );
@@ -508,7 +505,7 @@ export function activate(context: vscode.ExtensionContext) {
             const config = vscode.workspace.getConfiguration('autoProxy');
             await config.update('enabled', false, vscode.ConfigurationTarget.Global);
             stopAutoCheck();
-            vscode.window.showInformationMessage(t('msgAutoCheckStopped'));
+            vscode.window.showInformationMessage(t('msgAutoCheckStopped'), t('msgAction_Ok'));
         }
     );
     
@@ -519,7 +516,7 @@ export function activate(context: vscode.ExtensionContext) {
             const config = vscode.workspace.getConfiguration('autoProxy');
             await config.update('enabled', true, vscode.ConfigurationTarget.Global);
             startAutoCheck();
-            vscode.window.showInformationMessage(t('msgAutoCheckStarted'));
+            vscode.window.showInformationMessage(t('msgAutoCheckStarted'), t('msgAction_Ok'));
         }
     );
 

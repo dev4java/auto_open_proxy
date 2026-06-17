@@ -97,6 +97,7 @@ interface Messages {
     proxyMissingEnterPortDesc: string;
     proxyMissingEnterFull: string;
     proxyMissingEnterFullDesc: string;
+    proxyCancel: string;
 }
 
 const zh_CN: Messages = {
@@ -195,6 +196,7 @@ const zh_CN: Messages = {
     proxyMissingEnterPortDesc: '使用 http://127.0.0.1:你的端口',
     proxyMissingEnterFull: '输入完整代理 URL',
     proxyMissingEnterFullDesc: '支持 http(s):// 或 socks5://',
+    proxyCancel: '$(close) 取消',
 };
 
 const en_US: Messages = {
@@ -294,6 +296,7 @@ const en_US: Messages = {
     proxyMissingEnterPortDesc: 'Uses http://127.0.0.1:<port>',
     proxyMissingEnterFull: 'Enter full proxy URL',
     proxyMissingEnterFullDesc: 'Supports http(s):// or socks5://',
+    proxyCancel: '$(close) Cancel',
 };
 
 let currentLanguage: string = 'en';

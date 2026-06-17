@@ -2,7 +2,7 @@
   "name": "auto-proxy-switcher",
   "displayName": "Auto Proxy Switcher",
   "description": "自定义本地代理 URL/端口（autoProxy.proxyUrl）；可选读取系统代理与环境变量；启用前可确认/改端口或只填端口；http.proxy 仅写入用户设置 | Custom proxy URL/port; optional system/env proxy hint; confirm or enter port before apply; http.proxy in User settings only",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "icon": "icon.png",
   "publisher": "yusw",
   "author": {
